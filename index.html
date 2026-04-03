@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Team Expense Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: #fff;
+      padding: 1.5rem 2rem;
+      text-align: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header p { font-size: 0.85rem; opacity: 0.7; margin-top: 0.25rem; }
+
+    .container {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    /* ---- Form Card ---- */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #16213e;
+      border-bottom: 2px solid #e8e8e8;
+      padding-bottom: 0.5rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #555;
+      margin-bottom: 0.3rem;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #0f3460;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-primary { background: #0f3460; color: #fff; margin-top: 1rem; }
+    .btn-primary:hover { background: #1a4a7a; }
+    .btn-danger { background: #e74c3c; color: #fff; font-size: 0.75rem; padding: 0.3rem 0.6rem; }
+    .btn-danger:hover { background: #c0392b; }
+
+    /* ---- Summary Grid ---- */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .summary-table { width: 100%; border-collapse: collapse; }
+    .summary-table th,
+    .summary-table td {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.9rem;
+    }
+    .summary-table th {
+      background: #f7f8fa;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #777;
+    }
+    .summary-table tr:not(:last-child) td { border-bottom: 1px solid #eee; }
+    .summary-table .total-row td {
+      font-weight: 700;
+      border-top: 2px solid #ddd;
+      padding-top: 0.6rem;
+    }
+
+    /* ---- Expense Log Table ---- */
+    .log-table { width: 100%; border-collapse: collapse; }
+    .log-table th,
+    .log-table td {
+      text-align: left;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.88rem;
+    }
+    .log-table th {
+      background: #f7f8fa;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #777;
+      position: sticky;
+      top: 0;
+    }
+    .log-table tr:nth-child(even) { background: #fafbfc; }
+    .log-table tr:hover { background: #f0f4ff; }
+    .log-wrapper {
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: #aaa;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr; }
+      header h1 { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Sales Team Expense Tracker</h1>
+  <p>Track and summarize team expenses in real time</p>
+</header>
+
+<div class="container">
+
+  <!-- Entry Form -->
+  <div class="card">
+    <h2>Add Expense</h2>
+    <form id="expense-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="rep-name">Sales Rep</label>
+          <select id="rep-name" required>
+            <option value="">Select rep&hellip;</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="amount">Amount ($)</label>
+          <input type="number" id="amount" min="0.01" step="0.01" placeholder="0.00" required>
+        </div>
+        <div class="form-group">
+          <label for="category">Category</label>
+          <select id="category" required>
+            <option value="">Select category&hellip;</option>
+            <option>Travel</option>
+            <option>Meals</option>
+            <option>Lodging</option>
+            <option>Transportation</option>
+            <option>Office Supplies</option>
+            <option>Client Entertainment</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="expense-date">Date</label>
+          <input type="date" id="expense-date" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Add Expense</button>
+    </form>
+  </div>
+
+  <!-- Summaries -->
+  <div class="summary-grid">
+    <div class="card">
+      <h2>Totals by Manager</h2>
+      <table class="summary-table" id="manager-summary">
+        <thead><tr><th>Manager</th><th>Total</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Totals by Category</h2>
+      <table class="summary-table" id="category-summary">
+        <thead><tr><th>Category</th><th>Total</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Totals by Rep</h2>
+      <table class="summary-table" id="rep-summary">
+        <thead><tr><th>Rep</th><th>Manager</th><th>Total</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Expense Log -->
+  <div class="card">
+    <h2>Expense Log</h2>
+    <div class="log-wrapper">
+      <table class="log-table" id="expense-log">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Rep</th>
+            <th>Manager</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="empty-msg">No expenses recorded yet.</div>
+  </div>
+</div>
+
+<script>
+  // ---- Data: reps mapped to their managers ----
+  const TEAM = {
+    'Alice Johnson':   'Sarah Kim',
+    'Bob Martinez':    'Sarah Kim',
+    'Carlos Rivera':   'Sarah Kim',
+    'Dana Lee':        'James Patel',
+    'Eric Wang':       'James Patel',
+    'Fiona Chen':      'James Patel',
+    'Greg Thomas':     'Priya Nair',
+    'Hannah Scott':    'Priya Nair',
+    'Ivan Petrov':     'Priya Nair',
+  };
+
+  const STORAGE_KEY = 'expense_tracker_data';
+
+  // ---- Populate rep dropdown ----
+  const repSelect = document.getElementById('rep-name');
+  Object.keys(TEAM).sort().forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = `${name} (${TEAM[name]})`;
+    repSelect.appendChild(opt);
+  });
+
+  // ---- Set default date to today ----
+  document.getElementById('expense-date').valueAsDate = new Date();
+
+  // ---- Local storage helpers ----
+  function loadExpenses() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch { return []; }
+  }
+
+  function saveExpenses(expenses) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+  }
+
+  // ---- Currency formatter ----
+  const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+  // ---- Render everything ----
+  function render() {
+    const expenses = loadExpenses();
+
+    // Expense log
+    const logBody = document.querySelector('#expense-log tbody');
+    const emptyMsg = document.getElementById('empty-msg');
+    logBody.innerHTML = '';
+
+    if (expenses.length === 0) {
+      emptyMsg.style.display = '';
+    } else {
+      emptyMsg.style.display = 'none';
+      expenses
+        .slice()
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .forEach((exp, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${exp.date}</td>
+            <td>${exp.rep}</td>
+            <td>${exp.manager}</td>
+            <td>${exp.category}</td>
+            <td>${fmt.format(exp.amount)}</td>
+            <td><button class="btn btn-danger" data-id="${exp.id}">Remove</button></td>
+          `;
+          logBody.appendChild(tr);
+        });
+    }
+
+    // Summaries
+    renderSummary('#manager-summary tbody', groupBy(expenses, 'manager'));
+    renderSummary('#category-summary tbody', groupBy(expenses, 'category'));
+    renderRepSummary(expenses);
+  }
+
+  function groupBy(expenses, key) {
+    const map = {};
+    expenses.forEach(e => { map[e[key]] = (map[e[key]] || 0) + e.amount; });
+    return map;
+  }
+
+  function renderSummary(selector, data) {
+    const tbody = document.querySelector(selector);
+    tbody.innerHTML = '';
+    const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+    const grandTotal = entries.reduce((s, e) => s + e[1], 0);
+
+    if (entries.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="2" style="color:#aaa;text-align:center;">—</td></tr>';
+      return;
+    }
+
+    entries.forEach(([label, total]) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${label}</td><td>${fmt.format(total)}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    const totalRow = document.createElement('tr');
+    totalRow.className = 'total-row';
+    totalRow.innerHTML = `<td>Total</td><td>${fmt.format(grandTotal)}</td>`;
+    tbody.appendChild(totalRow);
+  }
+
+  function renderRepSummary(expenses) {
+    const tbody = document.querySelector('#rep-summary tbody');
+    tbody.innerHTML = '';
+    const map = {};
+    expenses.forEach(e => {
+      map[e.rep] = map[e.rep] || { manager: e.manager, total: 0 };
+      map[e.rep].total += e.amount;
+    });
+
+    const entries = Object.entries(map).sort((a, b) => b[1].total - a[1].total);
+    const grandTotal = entries.reduce((s, e) => s + e[1].total, 0);
+
+    if (entries.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="color:#aaa;text-align:center;">—</td></tr>';
+      return;
+    }
+
+    entries.forEach(([rep, data]) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${rep}</td><td>${data.manager}</td><td>${fmt.format(data.total)}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    const totalRow = document.createElement('tr');
+    totalRow.className = 'total-row';
+    totalRow.innerHTML = `<td>Total</td><td></td><td>${fmt.format(grandTotal)}</td>`;
+    tbody.appendChild(totalRow);
+  }
+
+  // ---- Form submit ----
+  document.getElementById('expense-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const rep = document.getElementById('rep-name').value;
+    const expense = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      rep,
+      manager: TEAM[rep],
+      amount: parseFloat(document.getElementById('amount').value),
+      category: document.getElementById('category').value,
+      date: document.getElementById('expense-date').value,
+    };
+
+    const expenses = loadExpenses();
+    expenses.push(expense);
+    saveExpenses(expenses);
+    render();
+    e.target.reset();
+    document.getElementById('expense-date').valueAsDate = new Date();
+  });
+
+  // ---- Delete handler (event delegation) ----
+  document.querySelector('#expense-log').addEventListener('click', e => {
+    if (e.target.matches('.btn-danger')) {
+      const id = e.target.dataset.id;
+      const expenses = loadExpenses().filter(ex => ex.id !== id);
+      saveExpenses(expenses);
+      render();
+    }
+  });
+
+  // ---- Initial render ----
+  render();
+</script>
+
+</body>
+</html>
