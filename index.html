@@ -203,6 +203,25 @@
     </form>
   </div>
 
+  <!-- Filters -->
+  <div class="card">
+    <h2>Filters</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="filter-manager">Manager</label>
+        <select id="filter-manager">
+          <option value="">All Managers</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="filter-rep">Sales Rep</label>
+        <select id="filter-rep">
+          <option value="">All Reps</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
   <!-- Summaries -->
   <div class="summary-grid">
     <div class="card">
@@ -266,6 +285,9 @@
 
   const STORAGE_KEY = 'expense_tracker_data';
 
+  // ---- Derive manager list ----
+  const MANAGERS = [...new Set(Object.values(TEAM))].sort();
+
   // ---- Populate rep dropdown ----
   const repSelect = document.getElementById('rep-name');
   Object.keys(TEAM).sort().forEach(name => {
@@ -274,6 +296,40 @@
     opt.textContent = `${name} (${TEAM[name]})`;
     repSelect.appendChild(opt);
   });
+
+  // ---- Populate filter dropdowns ----
+  const filterManager = document.getElementById('filter-manager');
+  const filterRep = document.getElementById('filter-rep');
+
+  MANAGERS.forEach(mgr => {
+    const opt = document.createElement('option');
+    opt.value = mgr;
+    opt.textContent = mgr;
+    filterManager.appendChild(opt);
+  });
+
+  function populateRepFilter(manager) {
+    const current = filterRep.value;
+    filterRep.innerHTML = '<option value="">All Reps</option>';
+    const reps = Object.keys(TEAM)
+      .filter(r => !manager || TEAM[r] === manager)
+      .sort();
+    reps.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      filterRep.appendChild(opt);
+    });
+    // Preserve selection if still valid
+    if (reps.includes(current)) filterRep.value = current;
+  }
+  populateRepFilter('');
+
+  filterManager.addEventListener('change', () => {
+    populateRepFilter(filterManager.value);
+    render();
+  });
+  filterRep.addEventListener('change', () => render());
 
   // ---- Set default date to today ----
   document.getElementById('expense-date').valueAsDate = new Date();
@@ -294,7 +350,13 @@
 
   // ---- Render everything ----
   function render() {
-    const expenses = loadExpenses();
+    const all = loadExpenses();
+    const mgrFilter = filterManager.value;
+    const repFilter = filterRep.value;
+    const expenses = all.filter(e =>
+      (!mgrFilter || e.manager === mgrFilter) &&
+      (!repFilter || e.rep === repFilter)
+    );
 
     // Expense log
     const logBody = document.querySelector('#expense-log tbody');
