@@ -272,12 +272,14 @@
 <script>
   const STORAGE_KEY = 'expense_tracker_data';
   let TEAM = {};
+  let DIRECTOR = '';
 
   // ---- Load team data from JSON, then initialize ----
   fetch('team.json')
     .then(res => res.json())
     .then(data => {
-      TEAM = data;
+      TEAM = data.reps;
+      DIRECTOR = data.director;
       initApp();
     })
     .catch(err => {
@@ -304,7 +306,7 @@
     MANAGERS.forEach(mgr => {
       const opt = document.createElement('option');
       opt.value = mgr;
-      opt.textContent = mgr;
+      opt.textContent = DIRECTOR ? `${mgr} (${DIRECTOR})` : mgr;
       filterManager.appendChild(opt);
     });
 
