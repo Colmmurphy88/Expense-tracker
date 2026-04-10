@@ -2,31 +2,27 @@ name: Weekly Macro Briefing
 
 on:
   schedule:
-    # Every Monday at 07:00 UTC
     - cron: '0 7 * * 1'
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   briefing:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: macro-briefing
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Install dependencies
-        run: pip install -r macro-briefing/requirements.txt
-
-      - name: Run macro briefing
+        run: pip install -r requirements.txt
+      - name: Run briefing
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           EMAIL_TO_GMAIL: ${{ secrets.EMAIL_TO_GMAIL }}
           EMAIL_TO_OUTLOOK: ${{ secrets.EMAIL_TO_OUTLOOK }}
-        run: cd macro-briefing && python macro_briefing.py
+        run: python macro_briefing.py
