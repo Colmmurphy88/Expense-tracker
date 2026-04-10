@@ -47,5 +47,5 @@ SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 
 # --- Retry / rate-limit settings ---
-MAX_RETRIES = 2
-DELAY_BETWEEN_CALLS = 2  # seconds
+MAX_RETRIES = 3
+DELAY_BETWEEN_CALLS = 90  # seconds
