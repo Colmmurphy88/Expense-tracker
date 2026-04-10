@@ -67,10 +67,18 @@ def research_country(client: anthropic.Anthropic, country: str) -> dict:
 
             return data
 
+        except (anthropic.RateLimitError, anthropic.APIStatusError) as e:
+            # Handle rate limits (429) and overloaded (529) with backoff
+            if attempt < max_retries:
+                wait = 30 * (attempt + 1)  # 30s, then 60s
+                print(f"  API error, waiting {wait}s before retry {attempt + 1}/{max_retries}...")
+                time.sleep(wait)
+            else:
+                raise
         except Exception as e:
             if attempt < max_retries:
                 print(f"  Retry {attempt + 1}/{max_retries} for {country}: {e}")
-                time.sleep(2)
+                time.sleep(5)
             else:
                 raise
 
@@ -122,9 +130,11 @@ def main() -> None:
             print(f"FAILED ({e})")
             failures.append(country)
 
-        # Rate-limit delay between calls (skip after last)
+        # Rate-limit delay between calls (skip after last).
+        # Web search responses are token-heavy; 45s keeps us under typical
+        # per-minute token limits.
         if i < len(config.COUNTRIES) - 1:
-            time.sleep(2)
+            time.sleep(45)
 
     if not results:
         print("ERROR: All countries failed. No email sent.")
